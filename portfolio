@@ -1,0 +1,670 @@
+import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+void main() {
+  runApp(PortfolioApp());
+}
+
+class PortfolioApp extends StatefulWidget {
+  const PortfolioApp({super.key});
+
+  @override
+  State<PortfolioApp> createState() => _PortfolioAppState();
+}
+
+class _PortfolioAppState extends State<PortfolioApp> {
+  ThemeMode _mode = ThemeMode.light;
+
+  @override
+  Widget build(BuildContext context) {
+    final baseLight = ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFF3B82F6)),
+      scaffoldBackgroundColor: Color(0xFFF7F7FA),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
+      ),
+    );
+
+    final baseDark = ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFF3B82F6), brightness: Brightness.dark),
+      scaffoldBackgroundColor: Color(0xFF0F1115),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.all(Radius.circular(16))),
+      ),
+    );
+
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Anjali Trivedi -- Portfolio',
+      theme: baseLight,
+      darkTheme: baseDark,
+      themeMode: _mode,
+      home: PortfolioScreen(
+        onToggleTheme: () => setState(() => _mode = _mode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light),
+      ),
+    );
+  }
+}
+
+class PortfolioScreen extends StatefulWidget {
+  final VoidCallback onToggleTheme;
+
+  const PortfolioScreen({super.key, required this.onToggleTheme});
+
+  @override
+  State<PortfolioScreen> createState() => _PortfolioScreenState();
+}
+
+class _PortfolioScreenState extends State<PortfolioScreen> with TickerProviderStateMixin {
+  final ScrollController _scroll = ScrollController();
+
+  final aboutKey = GlobalKey();
+  final educationKey = GlobalKey();
+  final skillsKey = GlobalKey();
+  final projectsKey = GlobalKey();
+  final contactKey = GlobalKey();
+
+  int _navIndex = 0;
+
+  void _goTo(GlobalKey key, int index) {
+    setState(() => _navIndex = index);
+    final ctx = key.currentContext;
+    if (ctx != null) {
+      Scrollable.ensureVisible(ctx, duration: Duration(milliseconds: 700), curve: Curves.easeInOutCubic, alignment: 0.08);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    final positions = [
+      aboutKey,
+      educationKey,
+      skillsKey,
+      projectsKey,
+      contactKey,
+    ];
+
+    for (int i = 0; i < positions.length; i++) {
+      final ctx = positions[i].currentContext;
+      if (ctx != null) {
+        final box = ctx.findRenderObject() as RenderBox;
+        final offset = box.localToGlobal(Offset.zero).dy;
+
+        // Adjust threshold
+        if (offset >= 0 && offset < MediaQuery.of(context).size.height / 2) {
+          if (_navIndex != i) {
+            setState(() => _navIndex = i);
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isWide = MediaQuery.of(context).size.width >= 900;
+    final cs = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        title: Text('Anjali Trivedi', style: TextStyle(fontWeight: FontWeight.w700)),
+        centerTitle: false,
+        actions: [
+          if (isWide)
+            Row(
+              children: [
+                _TopLink(label: 'About', onTap: () => _goTo(aboutKey, 0), selected: _navIndex == 0),
+                _TopLink(label: 'Education', onTap: () => _goTo(educationKey, 1), selected: _navIndex == 1),
+                _TopLink(label: 'Skills', onTap: () => _goTo(skillsKey, 2), selected: _navIndex == 2),
+                _TopLink(label: 'Projects', onTap: () => _goTo(projectsKey, 3), selected: _navIndex == 3),
+                _TopLink(label: 'Contact', onTap: () => _goTo(contactKey, 4), selected: _navIndex == 4),
+              ],
+            ),
+          IconButton(
+            tooltip: 'Toggle theme',
+            onPressed: widget.onToggleTheme,
+            icon: Icon(Icons.brightness_6_rounded),
+          ),
+          SizedBox(width: 8),
+        ],
+      ),
+      drawer: isWide
+          ? null
+          : Drawer(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  DrawerHeader(
+                    decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
+                    child: Text('Menu', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20)),
+                  ),
+                  ListTile(
+                    selected: _navIndex == 0,
+                    leading: Icon(Icons.person),
+                    title: Text('About'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _goTo(aboutKey, 0);
+                    },
+                  ),
+                  ListTile(
+                    selected: _navIndex == 1,
+                    leading: Icon(Icons.school),
+                    title: Text('Education'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _goTo(educationKey, 1);
+                    },
+                  ),
+                  ListTile(
+                    selected: _navIndex == 2,
+                    leading: Icon(Icons.bolt),
+                    title: Text('Skills'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _goTo(skillsKey, 2);
+                    },
+                  ),
+                  ListTile(
+                    selected: _navIndex == 3,
+                    leading: Icon(Icons.work),
+                    title: Text('Projects'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _goTo(projectsKey, 3);
+                    },
+                  ),
+                  ListTile(
+                    selected: _navIndex == 4,
+                    leading: Icon(Icons.mail),
+                    title: Text('Contact'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _goTo(contactKey, 4);
+                    },
+                  ),
+                ],
+              ),
+            ),
+      body: SingleChildScrollView(
+        controller: _scroll,
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: 1100),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _HeroHeader(onContactTap: () => _goTo(contactKey, 4)),
+                SizedBox(height: 28),
+
+                _Section(
+                  key: aboutKey,
+                  title: 'About',
+                  child: Text(
+                    'I\'m Anjali Trivedi — a BCA student at Silver Oak University from Ahmedabad, Gujarat. \ '
+                    'I completed my schooling at Sagar Vidhyalaya. I\'m learning Python for AI/ML and actively seeking an internship \ '
+                    'to apply my skills. I\'ve built a CRUD API in Python, a QR code generator, meme creator, polaroid generator, \ '
+                    'daily expense tracker, snake game, voice assistant, and a face recognizer.',
+                    style: TextStyle(height: 1.6),
+                  ),
+                ),
+                SizedBox(height: 24),
+
+                _Section(
+                  key: educationKey,
+                  title: 'Education',
+                  child: Column(
+                    children: [
+                      _EduTitle(title: 'Bachelor of Computer Applications (BCA)', org: 'Silver Oak University', period: 'Pursuing'),
+                      SizedBox(height: 18),
+                      _EduTitle(title: 'Schooling', org: 'Sagar Vidhyalaya', period: ' Completed'),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 24),
+
+                _Section(
+                  key: skillsKey,
+                  title: 'Skills',
+                  child: Column(
+                    children: [
+                      _SkillBar(label: 'Core Python', value: 0.9),
+                      SizedBox(height: 8),
+                      _SkillBar(label: 'NumPy', value: 0.82),
+                      SizedBox(height: 8),
+                      _SkillBar(label: 'Pandas', value: 0.8),
+                      SizedBox(height: 8),
+                      _SkillBar(label: 'Tkinter', value: 0.78),
+                      SizedBox(height: 8),
+                      _SkillBar(label: 'Flask', value: 0.76),
+                      SizedBox(height: 8),
+                      _SkillBar(label: 'Turtle', value: 0.74),
+                      SizedBox(height: 8),
+                      _SkillBar(label: 'random (stdlib)', value: 0.7),
+                      SizedBox(height: 8),
+                      _SkillBar(label: 'AI/ML (learning)', value: 0.6),
+                      SizedBox(height: 8),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 24),
+
+                _Section(
+                  key: projectsKey,
+                  title: 'Project',
+                  child: _ProjectsGrid(),
+                ),
+                SizedBox(height: 24),
+
+                _Section(
+                  key: contactKey,
+                  title: 'Contact',
+                  child: Column(
+                    children: [
+                      _InfoRow(icon: Icons.email_rounded, label: 'Email', value: 'anjalitrivedii18@gmail.com'),
+                      SizedBox(height: 8),
+                      _InfoRow(icon: Icons.location_on_rounded, label: 'Location', value: 'Ahmedabad,Gujarat'),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 28),
+
+                Divider(color: cs.outlineVariant),
+                SizedBox(height: 14),
+                Text(
+                  '© ${DateTime.now().year} Anjali Trivedi',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: cs.onSurfaceVariant),
+                ),
+                SizedBox(height: 18),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroHeader extends StatelessWidget {
+  final VoidCallback onContactTap;
+
+  const _HeroHeader({required this.onContactTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final isWide = MediaQuery.of(context).size.width >= 900;
+    final cs = Theme.of(context).colorScheme;
+
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: isWide ? 56 : 44,
+              backgroundImage: AssetImage('assets/jpg/Anjali.jpg'),
+            ),
+            SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Anjali Trivedi',
+                    style: TextStyle(fontSize: isWide ? 28 : 22, fontWeight: FontWeight.w700),
+                  ),
+                  SizedBox(height: 6),
+                  Text('BCA Student Python AI/ML Enthusiast', style: TextStyle(color: cs.onSurfaceVariant)),
+                  SizedBox(height: 12),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      _Pill(text: 'Ahmedabad, Gujarat', icon: Icons.place_rounded),
+                      _Pill(text: 'Open to AI/ML Intership', icon: Icons.work_outline_rounded),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Section extends StatelessWidget {
+  final String title;
+  final Widget child;
+
+  const _Section({super.key, required this.title, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+        SizedBox(height: 12),
+        Card(
+          child: AnimatedSwitcher(
+            duration: Duration(milliseconds: 400),
+            switchInCurve: Curves.easeOut,
+            switchOutCurve: Curves.easeIn,
+            child: Padding(key: ValueKey(title), padding: EdgeInsets.all(20), child: child),
+          ),
+        ),
+        SizedBox(height: 8),
+        Divider(
+          color: cs.outlineVariant,
+        ),
+      ],
+    );
+  }
+}
+
+class _EduTitle extends StatelessWidget {
+  final String title;
+  final String org;
+  final String period;
+
+  const _EduTitle({required this.title, required this.org, required this.period});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(10)),
+            child: Icon(Icons.school_rounded, color: cs.primaryContainer),
+          ),
+        ),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: TextStyle(fontWeight: FontWeight.w600)),
+              SizedBox(height: 2),
+              Text(org, style: TextStyle(color: cs.onSurfaceVariant)),
+            ],
+          ),
+        ),
+        Text(period, style: TextStyle(color: cs.onSurfaceVariant)),
+      ],
+    );
+  }
+}
+
+class _SkillBar extends StatelessWidget {
+  final String label;
+  final double value;
+
+  const _SkillBar({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return TweenAnimationBuilder<double>(
+      duration: Duration(milliseconds: 900),
+      curve: Curves.easeOutCubic,
+      tween: Tween(begin: 0, end: value),
+      builder: (context, v, _) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(label, style: TextStyle(fontWeight: FontWeight.w600)),
+                ),
+                Text('${(v * 100).round()}%', style: TextStyle(color: cs.onSurfaceVariant)),
+              ],
+            ),
+            SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: LinearProgressIndicator(
+                minHeight: 8,
+                value: v,
+                backgroundColor: cs.surfaceContainerHighest.withValues(alpha: 0.6),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ProjectsGrid extends StatelessWidget {
+  final List<_Project> projects = const [
+    _Project('Whatsapp Message Sender', 'Created a Python tool to send WhatsApp messages automatically, making messaging faster and easier.', 'https://github.com/anjalitrivedii/python_programmes/blob/main/GAME/whatsapp.py'),
+    _Project('QR Code Generator', 'Generate custom QR codes.', 'https://github.com/anjalitrivedii/Projects-to-run-for-fun-/blob/main/qr%20code%20maker.py'),
+    _Project('Meme Creator', 'Create memes with captions.', 'https://github.com/anjalitrivedii/python_programmes/blob/main/GAME/meme%202.py'),
+    _Project('Polaroid Generator', 'Stylized polaroid frames for photos.', 'https://github.com/anjalitrivedii/python_programmes/blob/main/GAME/polaroid%20photo.py'),
+    _Project('Daily Expense Tracker', 'Track and visualize daily spending.', 'https://github.com/anjalitrivedii/Projects-to-run-for-fun-/blob/main/monthely%20spend%20analyzer.py'),
+    _Project('Snake Game', 'Classic snake game in Python.', 'https://github.com/anjalitrivedii/python_programmes/blob/main/GAME/SNAKE.py'),
+    _Project('Book Recommendation', 'It suggests books smartly according to interests and choices.', 'https://github.com/anjalitrivedii/Projects-to-run-for-fun-/blob/main/Book%20Recommendation.py'),
+    _Project('Face Recognizer', 'Simple face recognition demo.', 'https://github.com/anjalitrivedii/Projects-to-run-for-fun-/blob/main/FD.py'),
+  ];
+
+  const _ProjectsGrid();
+
+  @override
+  Widget build(BuildContext context) {
+    final isWide = MediaQuery.of(context).size.width >= 900;
+    final cross = isWide ? 3 : 1;
+    return LayoutBuilder(
+      builder: (context, c) {
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: cross,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: isWide ? 1.4 : 2.5,
+          ),
+          itemCount: projects.length,
+          itemBuilder: (context, i) => _ProjectCard(project: projects[i]),
+        );
+      },
+    );
+  }
+}
+
+class _ProjectCard extends StatefulWidget {
+  final _Project project;
+
+  const _ProjectCard({required this.project});
+
+  @override
+  State<_ProjectCard> createState() => _ProjectCardState();
+}
+
+class _ProjectCardState extends State<_ProjectCard> {
+  Future<void> _openLink(String url) async {
+    final Uri uri = Uri.parse(url);
+
+    if (!await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication, // for mobile
+      webOnlyWindowName: '_blank', // for web → opens new tab
+    )) {
+      throw Exception('Could not launch $url');
+    }
+  }
+
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: AnimatedScale(
+        duration: const Duration(milliseconds: 180),
+        scale: _hover ? 1.02 : 1.0,
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: cs.primaryContainer,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(Icons.code_rounded, color: cs.onPrimaryContainer),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(widget.project.title, style: TextStyle(fontWeight: FontWeight.w600)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(widget.project.desc, style: TextStyle(height: 1.5, color: cs.onSurfaceVariant)),
+                const Spacer(),
+                Row(
+                  children: [
+                    TextButton.icon(
+                      onPressed: () => _openLink(widget.project.url),
+                      icon: const Icon(Icons.visibility_rounded),
+                      label: const Text('Preview'),
+                    ),
+                    const SizedBox(width: 8),
+                    OutlinedButton.icon(
+                      onPressed: () {},
+                      icon: const Icon(Icons.article_rounded),
+                      label: const Text('Details'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Project {
+  final String title;
+  final String url;
+  final String desc;
+
+  const _Project(this.title, this.desc, this.url);
+}
+
+class _TopLink extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+  final bool selected;
+
+  const _TopLink({required this.label, required this.onTap, required this.selected});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: TextButton(
+        onPressed: onTap,
+        style: TextButton.styleFrom(
+          foregroundColor: selected ? cs.primary : cs.onSurface,
+          textStyle: TextStyle(fontWeight: selected ? FontWeight.w700 : FontWeight.w500),
+        ),
+        child: Text(label),
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _InfoRow({required this.icon, required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Icon(icon, color: cs.primary),
+        const SizedBox(width: 10),
+        Text(label, style: TextStyle(fontWeight: FontWeight.w600)),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(value, style: TextStyle(color: cs.onSurfaceVariant)),
+        ),
+      ],
+    );
+  }
+}
+
+class _Pill extends StatelessWidget {
+  final String text;
+  final IconData icon;
+
+  const _Pill({required this.text, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: cs.onSurfaceVariant.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(color: cs.outlineVariant),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color: cs.onSurfaceVariant,
+          ),
+          SizedBox(width: 6),
+          Text(text, style: TextStyle(color: cs.onSurfaceVariant)),
+        ],
+      ),
+    );
+  }
+}
